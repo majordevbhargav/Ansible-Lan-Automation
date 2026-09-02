@@ -1,0 +1,8 @@
+# requirements.yml
+# Install these before running the playbook:
+#   ansible-galaxy collection install -r requirements.yml
+
+collections:
+  - name: cisco.ios
+  - name: arubanetworks.aos_switch
+  - name: ansible.netcommon

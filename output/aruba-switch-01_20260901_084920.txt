@@ -1,0 +1,19 @@
+=== aruba-switch-01 (172.29.129.63) ===
+
+--- show interface status ---
+b'show interface status\r\n% Command incomplete.\r\nAGILUSARUBASW2# '
+
+--- show interface brief ---
+-------------------------------------------------------------------------------------
+Port      Native  Mode   Type           Enabled Status  Reason                 Speed 
+          VLAN                                                                 (Mb/s)
+-------------------------------------------------------------------------------------
+1/1/1     --      routed --             yes     up                             1000  
+1/1/2     50      access --             yes     up                             1000  
+1/1/3     20      access --             yes     up                             1000  
+1/1/4     --      routed --             no      down    Administratively down  --    
+1/1/5     --      routed --             no      down    Administratively down  --    
+1/1/6     --      routed --             no      down    Administratively down  --    
+vlan1     --             --             yes     down                           --    
+vlan10    --             --             yes     down                           --    
+vlan20    --             --             yes     up                             --

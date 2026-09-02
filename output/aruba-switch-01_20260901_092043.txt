@@ -1,0 +1,4 @@
+=== aruba-switch-01 (172.29.129.63) ===
+
+--- show interface status ---
+b'show interface status\r\n% Command incomplete.\r\nAGILUSARUBASW2# '

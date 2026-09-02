@@ -1,0 +1,26 @@
+# inventory.yml
+# Devices are grouped by platform so the playbook knows which
+# collection/module to use for each. No credentials live here.
+
+all:
+  children:
+    cisco_switches:
+      hosts:
+        core-switch-01:
+          ansible_host: 10.5.1.20
+      vars:
+        ansible_network_os: cisco.ios.ios
+
+    aruba_switches:
+      hosts:
+        aruba-switch-01:
+          ansible_host: 172.29.129.63
+      vars:
+        ansible_network_os: arubanetworks.aos_switch.arubaoss
+
+  vars:
+    ansible_connection: ansible.netcommon.network_cli
+    # username/password come from group_vars/all/vault.yml (encrypted),
+    # never typed in here.
+    ansible_user: "{{ vault_net_user }}"
+    ansible_password: "{{ vault_net_pass }}"

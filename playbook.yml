@@ -1,0 +1,98 @@
+# playbook.yml
+#
+# Runs the commands listed in commands.yml against every device in
+# inventory.yml, then saves each device's output to a timestamped
+# .txt file under ./output/ on this machine.
+#
+# USAGE (see README.md for full setup):
+#   ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass
+#
+#   Only one device:
+#   ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass --limit core-switch-01
+
+- name: Run commands on Cisco IOS switches
+  hosts: cisco_switches
+  gather_facts: false
+  vars:
+    run_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
+  tasks:
+    - name: Ensure output directory exists
+      delegate_to: localhost
+      run_once: true
+      ansible.builtin.file:
+        path: output
+        state: directory
+        mode: "0755"
+
+    - name: Run each command
+      cisco.ios.ios_command:
+        commands: "{{ commands }}"
+      register: cmd_result
+
+    - name: Save output to a local file
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "output/{{ inventory_hostname }}_{{ run_timestamp }}.txt"
+        content: |
+          === {{ inventory_hostname }} ({{ ansible_host }}) ===
+          {% for cmd in commands %}
+
+          --- {{ cmd }} ---
+          {{ cmd_result.stdout[loop.index0] }}
+          {% endfor %}
+
+- name: Run commands on Aruba (ArubaOS-Switch) devices
+  hosts: aruba_switches
+  gather_facts: false
+  vars:
+    run_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
+  tasks:
+    - name: Ensure output directory exists
+      delegate_to: localhost
+      run_once: true
+      ansible.builtin.file:
+        path: output
+        state: directory
+        mode: "0755"
+
+    - name: Run each command
+      arubanetworks.aos_switch.arubaoss_command:
+        commands: "{{ commands }}"
+      register: cmd_result
+
+    - name: Save output to a local file
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "output/{{ inventory_hostname }}_{{ run_timestamp }}.txt"
+        content: |
+          === {{ inventory_hostname }} ({{ ansible_host }}) ===
+          {% for cmd in commands %}
+
+          --- {{ cmd }} ---
+          {{ cmd_result.stdout[loop.index0] }}
+          {% endfor %}
+
+- name: Build a combined CSV report across all devices
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    run_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
+    report_hosts: "{{ (groups['cisco_switches'] | default([])) + (groups['aruba_switches'] | default([])) }}"
+  tasks:
+    - name: Ensure output directory exists
+      ansible.builtin.file:
+        path: output
+        state: directory
+        mode: "0755"
+
+    - name: Write combined CSV report
+      ansible.builtin.copy:
+        dest: "output/switch_report_{{ run_timestamp }}.csv"
+        content: |
+          device,host,command,timestamp,output
+          {% for h in report_hosts %}
+          {% for idx in range(commands | length) %}
+          {{ h }},{{ hostvars[h].ansible_host }},"{{ commands[idx] }}",{{ run_timestamp }},"{{ hostvars[h].cmd_result.stdout[idx] | replace('"','""') }}"
+          {% endfor %}
+          {% endfor %}

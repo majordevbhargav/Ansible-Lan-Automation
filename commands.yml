@@ -1,0 +1,11 @@
+# commands.yml
+# Edit this list to change which commands get run on every device.
+# These are passed in as -e @commands.yml when running the playbook.
+
+commands:
+ # - show run
+ # - show version
+  - show interface status
+  #ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass
+  #- show interface brief
+  #ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass --limit aruba-switch-01

@@ -1,68 +1,54 @@
-# Network Device Command Runner - Ansible version
+# LAN Automation with Ansible
 
-Same idea as the Python script, built as an Ansible playbook instead:
-run commands (e.g. `show run`) across Cisco and HP Aruba switches, and
-save the output to files. No Python code to write or maintain -
-everything below is YAML + a couple of CLI commands.
+An Ansible-based network automation workflow for collecting CLI output from Cisco and HP Aruba switches without maintaining a custom Python command runner.
 
-Note: Ansible itself is written in Python and needs Python installed
-on the machine you run it *from* (not on the switches). If your goal
-was "nothing Python-related anywhere," see the Bash+SSH option from
-earlier instead. If your goal was "I don't want to write/maintain
-Python code," this fits.
+## Overview
 
-## 1. Install Ansible and the collections
+The playbook uses Ansible network collections and an encrypted credential workflow to execute commands across an inventory and save timestamped reports.
+
+## Supported Collections
+
+- `cisco.ios`
+- `arubanetworks.aos_switch`
+- `ansible.netcommon`
+
+## Project Structure
+
+```text
+inventory.yml
+commands.yml
+playbook.yml
+requirements.yml
+group_vars/
+└── all/
+    └── vault.yml
+output/
+```
+
+## Setup
+
+Install Ansible and the required collections:
 
 ```bash
 pip install ansible-core
 ansible-galaxy collection install -r requirements.yml
 ```
 
-`requirements.yml` pulls in:
-- `cisco.ios` - Cisco IOS/IOS-XE support
-- `arubanetworks.aos_switch` - ArubaOS-Switch (HP Aruba) support
-- `ansible.netcommon` - shared connection plugin both rely on
-
-## 2. Fill in and encrypt your credentials
-
-Edit `group_vars/all/vault.yml` and replace the placeholders:
-
-```yaml
-vault_net_user: "ram"
-vault_net_pass: "your-real-password"
-```
-
-Then encrypt the file so the password never sits on disk in plain
-text:
+Store network credentials in the Ansible Vault file and encrypt it:
 
 ```bash
 ansible-vault encrypt group_vars/all/vault.yml
 ```
 
-You'll be asked to set a vault password - remember it, you'll need
-it every time you run the playbook. If you ever need to edit the
-credentials again, use `ansible-vault edit group_vars/all/vault.yml`
-rather than opening the file directly.
+Never commit plaintext credentials.
 
-## 3. Edit the inventory / commands
-
-- `inventory.yml` already lists your two switches (Cisco at
-  10.5.1.20, Aruba at 172.29.129.63) - add more under the matching
-  group as needed.
-- `commands.yml` lists the commands to run on every device - add or
-  remove lines there.
-
-## 4. Run it
+## Run
 
 ```bash
 ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass
 ```
 
-You'll be prompted for the vault password you set in step 2 (not
-the switch password - that's already stored, encrypted, in the
-vault file).
-
-Only target one device:
+Limit execution to one device:
 
 ```bash
 ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass --limit core-switch-01
@@ -70,65 +56,28 @@ ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass
 
 ## Output
 
-Each device gets its own timestamped file under `./output/`, e.g.
-`output/core-switch-01_20260901_143500.txt` - same layout as the
-Python version, easy to open in any text editor.
+The playbook produces timestamped per-device command output and a combined CSV report for analysis in tools such as Excel.
 
-## Ideas for next steps
+## Why Ansible
 
-- **Config changes, not just show commands**: `cisco.ios.ios_config`
-  and the equivalent Aruba module can push configuration the same
-  way this pulls output - handy for standardizing settings across
-  the fleet.
-- **Scheduled runs**: wire this playbook into cron (Linux/Mac) or
-  Task Scheduler (Windows) for a nightly "pull show run from every
-  switch" job, giving you a running history of configs.
-- **Diffing over time**: since every run is timestamped, diffing two
-  output files for the same device shows exactly what changed
-  between runs - useful for change control.
-- **Enable/privileged mode**: if any commands need enable mode on
-  Cisco, add an `ansible_become: true` / `ansible_become_method:
-  enable` pair to that device's vars, with the enable secret also
-  pulled from the vault.
-- **Bring in the Aruba posture / ISE work**: since you're also
-  building the ISE External Posture Assessment POC, this same
-  Ansible pattern could later trigger posture checks or pull
-  interface/MAC data as part of that compliance flow, if useful.
+The project demonstrates how the same network automation problem can be expressed declaratively through inventories, playbooks, collections, and Ansible Vault instead of a custom Python application.
 
-## Troubleshooting
+## Future Direction
 
-- **"couldn't resolve module/action" for the Aruba task**: make sure
-  you're on the latest version of this playbook - the Aruba module
-  is `arubanetworks.aos_switch.arubaoss_command`, not `aos_command`.
-  Aruba actually ships two separate collections: `aos_switch` for
-  older ArubaOS-Switch gear (what this playbook targets) and
-  `aoscx` for newer AOS-CX switches. If your switch is AOS-CX, let
-  me know and the playbook needs different module names
-  (`aoscx_command`).
-- **Aruba task fails with a "network_os" or "group_modules" error**:
-  try re-running with this environment variable set first:
-  `export ANSIBLE_NETWORK_GROUP_MODULES=arubaoss` (Linux/WSL), then
-  run the playbook again in the same terminal session.
+- Configuration deployment
+- Privileged-mode support
+- Scheduled compliance checks
+- Configuration diffing
+- Device validation and reporting
+- Integration with ISE and posture workflows
 
-## CSV export (for Excel)
+## Security
 
-Every run now also writes `output/switch_report_<timestamp>.csv`,
-a single file covering every device and every command, with columns:
-`device, host, command, timestamp, output`.
+Use Ansible Vault or another approved secrets-management system. Run automation only against authorized network devices and validate configuration changes before production deployment.
 
-Double-click it and Excel will open it directly. Multi-line output
-(like a full `show run`) sits correctly inside one cell, wrapped in
-quotes - just widen the row or turn on "Wrap Text" in Excel to read
-it comfortably. If double-clicking ever shows garbled characters
-instead of opening cleanly, use Excel's **Data > From Text/CSV**
-import option instead, which lets you confirm UTF-8 encoding.
+## Author
 
-The per-device `.txt` files are still written too, in case you want
-raw text for a specific device rather than the combined view.
+**Dev Bhargav**
 
-## Security note
-
-Same as before: never put real credentials directly into
-`inventory.yml`, `playbook.yml`, or any file that isn't run through
-`ansible-vault encrypt`. The vault file is the only place the
-password should live, and only in its encrypted form.
+- GitHub: https://github.com/majordevbhargav
+- LinkedIn: https://www.linkedin.com/in/devbhargav100

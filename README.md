@@ -1,10 +1,14 @@
 # LAN Automation with Ansible
 
-An Ansible-based network automation workflow for collecting CLI output from Cisco and HP Aruba switches without maintaining a custom Python command runner.
+An Ansible-based network automation project for collecting operational information from Cisco and HP Aruba switches using inventories, playbooks, collections, and Ansible Vault.
 
-## Overview
+## Why This Project
 
-The playbook uses Ansible network collections and an encrypted credential workflow to execute commands across an inventory and save timestamped reports.
+This project is the next step in my network automation learning path:
+
+**CLI → Python → Ansible → Infrastructure as Code**
+
+The focus is on repeatability, structured workflows, and safer network operations.
 
 ## Supported Collections
 
@@ -12,7 +16,7 @@ The playbook uses Ansible network collections and an encrypted credential workfl
 - `arubanetworks.aos_switch`
 - `ansible.netcommon`
 
-## Project Structure
+## Structure
 
 ```text
 inventory.yml
@@ -27,20 +31,16 @@ output/
 
 ## Setup
 
-Install Ansible and the required collections:
-
 ```bash
 pip install ansible-core
 ansible-galaxy collection install -r requirements.yml
 ```
 
-Store network credentials in the Ansible Vault file and encrypt it:
+Store credentials in Ansible Vault:
 
 ```bash
 ansible-vault encrypt group_vars/all/vault.yml
 ```
-
-Never commit plaintext credentials.
 
 ## Run
 
@@ -48,36 +48,38 @@ Never commit plaintext credentials.
 ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass
 ```
 
-Limit execution to one device:
+Limit execution when testing:
 
 ```bash
 ansible-playbook -i inventory.yml playbook.yml -e @commands.yml --ask-vault-pass --limit core-switch-01
 ```
 
-## Output
+## What I Am Learning
 
-The playbook produces timestamped per-device command output and a combined CSV report for analysis in tools such as Excel.
+- Infrastructure as Code
+- Network inventories
+- Declarative automation
+- Multi-vendor automation
+- Credential management
+- Repeatable reporting
 
-## Why Ansible
+## Security
 
-The project demonstrates how the same network automation problem can be expressed declaratively through inventories, playbooks, collections, and Ansible Vault instead of a custom Python application.
+Never commit plaintext credentials. Use Ansible Vault or another approved secrets-management system.
+
+Run automation only against authorized devices.
 
 ## Future Direction
 
 - Configuration deployment
-- Privileged-mode support
-- Scheduled compliance checks
+- Compliance checks
 - Configuration diffing
-- Device validation and reporting
-- Integration with ISE and posture workflows
-
-## Security
-
-Use Ansible Vault or another approved secrets-management system. Run automation only against authorized network devices and validate configuration changes before production deployment.
+- Validation workflows
+- Scheduled reporting
+- ISE and posture integration
 
 ## Author
 
 **Dev Bhargav**
 
-- GitHub: https://github.com/majordevbhargav
-- LinkedIn: https://www.linkedin.com/in/devbhargav100
+[GitHub](https://github.com/majordevbhargav) · [LinkedIn](https://www.linkedin.com/in/devbhargav100)
